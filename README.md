@@ -1,147 +1,192 @@
+.
+
 🧠 Intelligent Email Analyzer
+AI-powered email summarization, sentiment analysis, bias detection, classification, spam detection & follow-up suggestion assistant.
 
-AI-powered Email Summarizer, Classifier & Follow-Up Assistant with Google Calendar Integration
+This project combines:
 
-📌 Overview
+FastAPI backend (deployed on Render)
 
-Intelligent Email Analyzer is an advanced NLP-powered tool that helps users manage their inbox efficiently.
-It automatically:
+Streamlit frontend (deployed on Streamlit Cloud)
 
-Summarizes emails
+OpenAI GPT-based models
 
-Detects bias, tone, and sentiment
+A clean modular architecture
 
-Classifies the type (Work / Personal / Spam / Support)
+Multiple ML/NLP features
 
-Extracts action items
+It provides a complete intelligent email analysis tool for productivity, support teams, and automated email triage.
 
-Suggests if follow-up is needed
+🚀 Live Demo (Frontend)
 
-Generates .ics calendar reminders or syncs directly to Google Calendar
+👉 Streamlit App: Add your Streamlit URL here
+https://intelligent-email-analyzer-14.streamlit.app
 
-Built using:
+🖥️ API (Backend)
 
-⚡ FastAPI for the backend
+👉 Backend API URL:
+https://intelligent-email-analyzer.onrender.com
 
-💻 Streamlit for the interactive frontend
+✨ Features
+📝 Email Summarization
 
-🧠 OpenAI GPT-4o-mini for natural language analysis
+Generates clear, compact summaries of long or complex emails.
 
-🗓️ Google Calendar API for scheduling automation
+⚖️ Bias Detection
 
-🚀 Features
-Category	Features
-🧠 Intelligence	Email summarization, sentiment & bias detection, tone classification
-⚙️ Automation	Follow-up detection, task extraction, event scheduling
-📆 Integration	Google Calendar OAuth + event creation
-📨 Spam Filtering	Classify emails as Spam / Legitimate
-🧾 Output Options	Downloadable .ics reminders, live calendar sync
-💬 Future Add-ons	Auto-reply generator, task sync (Notion/Todoist), analytics dashboard
+Identifies emotional or political bias in text.
+
+Useful for corporate communication and sensitive responses.
+
+❤️ Sentiment Analysis
+
+Returns a sentiment score from -1 (negative) to +1 (positive).
+
+Includes a short explanation.
+
+🏷 Email Classification
+
+Categorizes the email into:
+
+Work
+
+Personal
+
+Urgent
+
+Support
+
+Spam
+
+🚫 Spam Detection
+
+Determines whether the email is spam or legitimate
+
+🌐 Fully Deployed
+
+Backend on Render
+
+Frontend on Streamlit Cloud
+
+Both connected via public API URL
+
+📁 Project Structure
+intelligent-email-analyzer/
+│
+├── main.py                # FastAPI backend
+├── app.py                 # Streamlit frontend (optional in same repo)
+├── requirements.txt       # Dependencies
+│
+├── utils/                 # Helper modules
+│   ├── summarization.py
+│   ├── preprocess.py
+│   ├── bias_detection.py
+│
+├── data/
+│   └── emails.csv         # Sample data (optional)
+│
+└── README.md
+
+⚙️ Backend Setup (FastAPI)
+1️⃣ Install dependencies
+pip install -r requirements.txt
+2️⃣ Add your OpenAI API key
+
+Create .env:
+OPENAI_API_KEY=your_key_here
+3️⃣ Run the FastAPI server
+uvicorn main:app --reload
+4️⃣ Test API
+Open in browser:
+http://127.0.0.1:8000
+⚙️ Frontend Setup (Streamlit)
+1️⃣ Run Streamlit app
+streamlit run app.py
+2️⃣ Make sure FASTAPI_URL in app.py is correct:
+FASTAPI_URL = "https://intelligent-email-analyzer.onrender.com"
+☁️ Deployment Guide
+🔵 Deploy Backend (Render)
+
+Push project to GitHub
+
+Go to https://render.com
+
+Create New → Web Service
+
+Connect GitHub repo
+
+Set:
+
+Start Command:
+
+uvicorn main:app --host 0.0.0.0 --port 10000
 
 
-🏗️ Project Structure
-intelligent_email_analyzer/
-├── main.py                        # FastAPI backend
-├── .env                           # API keys and environment variables
-├── client_secrets.json             # Google OAuth credentials
-├── utils/
-│   ├── summarization.py            # Email summarization logic
-│   ├── bias_detection.py           # Bias analysis logic
-│   ├── calendar_event.py           # Local .ics calendar generation
-│   └── google_calendar.py          # Google Calendar integration
-└── streamlit_app/
-    └── app.py                      # Streamlit frontend UI
+Build Command:
 
-
-⚙️ Installation & Setup
-1️⃣ Clone Repository
-git clone https://github.com/yourusername/intelligent-email-analyzer.git
-cd intelligent-email-analyzer
-
-2️⃣ Create Virtual Environment
-python -m venv venv
-source venv/bin/activate   # (Mac/Linux)
-venv\Scripts\activate      # (Windows)
-
-3️⃣ Install Dependencies
 pip install -r requirements.txt
 
-🔑 Environment Variables
-Create a .env file in the project root:
-OPENAI_API_KEY=your_openai_key_here
 
-🗓️ Google Calendar Setup
+Add environment variable:
 
-Go to Google Cloud Console
-
-Create a project → Enable Google Calendar API
-
-Create OAuth Client ID (type: Desktop App)
-
-Download JSON → rename to client_secrets.json → place in project root
-
-First time you click “Connect Google Calendar”, a browser OAuth flow opens.
-→ A token.json file will be saved for reuse.
-
-🖥️ Running the App
-1️⃣ Start Backend 
-uvicorn main:app --reload
-Open http://127.0.0.1:8000/docs
- to verify FastAPI is running.
+OPENAI_API_KEY=your-key
 
 
-2️⃣ Start Frontend
-streamlit run streamlit_app/app.py
-Then visit http://localhost:8501
- to use the UI.
+Deploy
 
- 🧠 Usage Flow
+Copy backend URL (e.g., https://intelligent-email-analyzer.onrender.com)
 
-Paste an email into the Streamlit textbox
-Click 🔍 Analyze Email
-View:
+🟣 Deploy Frontend (Streamlit Cloud)
 
-Summary
+Go to https://share.streamlit.io
 
-Bias & Sentiment
+Deploy GitHub repo
 
-Classification
+In app.py, set:
 
-Spam Detection
+FASTAPI_URL = "https://intelligent-email-analyzer.onrender.com"
 
-Follow-Up Suggestions
 
-Download .ics reminder or
+Deploy
 
-Sync directly to Google Calendar via OAuth
-
-🧪 Example Input
+🧪 Test Example Email
 Hi Riya,
-Could you please send the final project report and confirm delivery by Friday?
+
+Please share the updated quotation for the 50 transformer units we discussed 
+last week. Also confirm whether the delivery can still be completed before 
+the 28th, as our client timeline is very strict.
+
 Thanks,
 Utkarsh
 
-Expected Output
 
-Summary: Request for project report & confirmation
-Sentiment: +0.4 (Polite)
-Classification: Work
-Follow-Up: true
-Action Items:
-Send report
-Confirm delivery
+Expected output:
 
-Google Calendar event auto-created for Friday
+Summary ✔
 
-🧭 Credits
+Bias: Neutral ✔
 
-OpenAI GPT Models
+Sentiment: Slightly positive ✔
 
-FastAPI
+Classification: Work ✔
 
-Streamlit
+Spam: Not Spam ✔
 
-Google Calendar API
+Follow-up JSON ✔
+
+📌 Notes
+
+Uses OpenAI GPT-4o-mini for fast, cheap inference.
+
+Render free tier sleeps after 15 minutes — first request may take a few seconds.
+
+Can easily expand with:
+Email priority scoring
+Auto-reply draft generation
+PDF email export
+Multi-language support
+
+live link- https://intelligent-email-analyzer-14.streamlit.app/
 
 💡 Author
 
@@ -149,4 +194,5 @@ Utkarsh Pandey
 AI Engineer | Data Science Learner | Innovator
 📍 Pune, India
 💼 GitHub: https://github.com/JustXutkarsh
+
 ✉️ Email: utkarshp034@gmail.com

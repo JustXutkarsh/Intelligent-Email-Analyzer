@@ -1,15 +1,15 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-import openai
+from openai import OpenAI
 import os
-import json
 
 # Load environment variables
 from dotenv import load_dotenv
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# OpenAI client (new SDK)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI(title="Intelligent Email Analyzer API")
 
@@ -30,13 +30,23 @@ class EmailRequest(BaseModel):
 
 # ---------- Helper Functions ----------
 
-def ask_openai(prompt, temperature=0.2):
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=temperature
-    )
-    return response.choices[0].message.content.strip()
+def ask_openai(prompt: str, temperature: float = 0.2):
+    """
+    Safely call the OpenAI API using the new official client.
+    Fully compatible with Render & latest SDK.
+    """
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=temperature
+        )
+        return response.choices[0].message.content.strip()
+
+    except Exception as e:
+        # print error to logs
+        print("OPENAI ERROR:", str(e))
+        return f"ERROR: Failed to call OpenAI: {str(e)}"
 
 
 # ---------- Endpoints ----------
@@ -49,7 +59,7 @@ def home():
 @app.post("/summarize")
 def summarize_email(data: EmailRequest):
     prompt = f"""
-    Summarize the following email in 2–3 crisp lines:
+    Summarize this email in 2–3 crisp lines:
 
     EMAIL:
     {data.text}
@@ -61,8 +71,7 @@ def summarize_email(data: EmailRequest):
 @app.post("/bias")
 def detect_bias(data: EmailRequest):
     prompt = f"""
-    Analyze for bias in the following email. 
-    Return only a short explanation.
+    Analyze for bias in the following email.
 
     EMAIL:
     {data.text}
@@ -72,10 +81,10 @@ def detect_bias(data: EmailRequest):
 
 
 @app.post("/sentiment")
-def sentiment(data: EmailRequest):
+def check_sentiment(data: EmailRequest):
     prompt = f"""
-    Give a sentiment score between -1 and +1 for the following email,
-    and explain briefly.
+    Give a sentiment analysis score between -1 and +1.
+    Also provide 1–2 lines of reasoning.
 
     EMAIL:
     {data.text}
@@ -85,9 +94,10 @@ def sentiment(data: EmailRequest):
 
 
 @app.post("/classify")
-def classify(data: EmailRequest):
+def classify_email(data: EmailRequest):
     prompt = f"""
-    Classify this email as one of: Work, Personal, Spam, Urgent, Support.
+    Classify this email as one of:
+    Work, Personal, Spam, Urgent, Support.
 
     EMAIL:
     {data.text}
@@ -99,7 +109,8 @@ def classify(data: EmailRequest):
 @app.post("/spam-detection")
 def spam_detector(data: EmailRequest):
     prompt = f"""
-    Determine if the following email is spam. Return "Spam" or "Not Spam".
+    Determine whether the email is spam.
+    Return ONLY "Spam" or "Not Spam".
 
     EMAIL:
     {data.text}
@@ -111,9 +122,9 @@ def spam_detector(data: EmailRequest):
 @app.post("/assistant/followup")
 def follow_up(data: EmailRequest):
     prompt = f"""
-    Analyze whether this email requires a follow-up. 
-    Return ONLY valid JSON in this exact structure:
+    Examine the email and decide if it requires follow-up.
 
+    Respond ONLY with valid JSON:
     {{
         "needs_followup": true/false,
         "followup_reason": "",
@@ -123,10 +134,8 @@ def follow_up(data: EmailRequest):
 
     EMAIL:
     {data.text}
-
-    Make sure the JSON is valid. Do NOT add explanations.
     """
-    result = ask_openai(prompt, temperature=0.3)
 
-    # Send raw output so Streamlit can parse it
+    result = ask_openai(prompt, temperature=0.3)
     return {"analysis": result}
+

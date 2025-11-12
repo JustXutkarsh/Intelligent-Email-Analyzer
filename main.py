@@ -1,18 +1,19 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import openai, os
-from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
-from utils.summarization import summarize_email
-from utils.bias_detection import detect_bias
-from utils.calendar_event import create_ics_event
+import openai
+import os
+import json
 
+# Load environment variables
+from dotenv import load_dotenv
 load_dotenv()
+
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-app = FastAPI(title="Intelligent Email Analyzer")
+app = FastAPI(title="Intelligent Email Analyzer API")
 
-# --- Allow Streamlit to connect locally ---
+# Allow Streamlit frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,116 +22,111 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Request schema ---
+# Request Schema
 class EmailRequest(BaseModel):
     id: str
     text: str
 
+
+# ---------- Helper Functions ----------
+
+def ask_openai(prompt, temperature=0.2):
+    response = openai.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature
+    )
+    return response.choices[0].message.content.strip()
+
+
+# ---------- Endpoints ----------
 
 @app.get("/")
 def home():
     return {"message": "Welcome to Intelligent Email Analyzer API"}
 
 
-# 🧠 Summarization
 @app.post("/summarize")
-async def summarize(data: EmailRequest):
-    return {"id": data.id, "summary": summarize_email(data.text)}
-
-
-# ⚖️ Bias Detection
-@app.post("/bias")
-async def bias(data: EmailRequest):
-    return {"id": data.id, "bias_analysis": detect_bias(data.text)}
-
-
-# ❤️ Sentiment Analysis
-@app.post("/sentiment")
-async def sentiment(data: EmailRequest):
+def summarize_email(data: EmailRequest):
     prompt = f"""
-    Analyze the emotional sentiment of the following email.
-    Give a sentiment score between -1 (negative) and +1 (positive),
-    and a short reasoning.
-    Email: {data.text}
-    """
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-    )
-    return {"id": data.id, "sentiment": response.choices[0].message.content.strip()}
+    Summarize the following email in 2–3 crisp lines:
 
-
-# 🏷️ Email Classification
-@app.post("/classify")
-async def classify(data: EmailRequest):
-    prompt = f"""
-    Classify this email as one of [Work, Personal, Spam, Support, Urgent].
-    Provide a one-line justification.
-    Email: {data.text}
-    """
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-    )
-    return {"id": data.id, "classification": response.choices[0].message.content.strip()}
-
-
-# 🚫 Spam Detection
-@app.post("/spam-detection")
-async def spam_detection(data: EmailRequest):
-    prompt = f"""
-    Determine if the following email is spam or legitimate.
-    Return either 'Spam' or 'Not Spam' with a brief reason.
-    Email: {data.text}
-    """
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2,
-    )
-    return {"id": data.id, "spam_result": response.choices[0].message.content.strip()}
-
-
-# 📆 Follow-Up Assistant
-@app.post("/assistant/followup")
-async def followup(data: EmailRequest):
-    """
-    Determines if the email requires follow-up, extracts tasks,
-    and suggests an ideal follow-up time window.
-    """
-    prompt = f"""
-    Analyze the following email and return a JSON object with:
-    1. "needs_followup": true/false
-    2. "followup_reason": short text
-    3. "suggested_timeframe": e.g. "2 days", "next week"
-    4. "action_items": list of to-dos (if any)
-    Email:
+    EMAIL:
     {data.text}
-    Return valid JSON only.
     """
-
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-    )
-
-    analysis = response.choices[0].message.content.strip()
-
-    # Create a default .ics event if follow-up is needed
-    if '"needs_followup": true' in analysis.lower():
-        filename = create_ics_event("Email Follow-Up", days_from_now=2)
-        return {
-            "id": data.id,
-            "analysis": analysis,
-            "calendar_file": filename,
-        }
-    else:
-        return {"id": data.id, "analysis": analysis, "calendar_file": None}
+    result = ask_openai(prompt)
+    return {"summary": result}
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+@app.post("/bias")
+def detect_bias(data: EmailRequest):
+    prompt = f"""
+    Analyze for bias in the following email. 
+    Return only a short explanation.
+
+    EMAIL:
+    {data.text}
+    """
+    result = ask_openai(prompt)
+    return {"bias_analysis": result}
+
+
+@app.post("/sentiment")
+def sentiment(data: EmailRequest):
+    prompt = f"""
+    Give a sentiment score between -1 and +1 for the following email,
+    and explain briefly.
+
+    EMAIL:
+    {data.text}
+    """
+    result = ask_openai(prompt)
+    return {"sentiment": result}
+
+
+@app.post("/classify")
+def classify(data: EmailRequest):
+    prompt = f"""
+    Classify this email as one of: Work, Personal, Spam, Urgent, Support.
+
+    EMAIL:
+    {data.text}
+    """
+    result = ask_openai(prompt)
+    return {"classification": result}
+
+
+@app.post("/spam-detection")
+def spam_detector(data: EmailRequest):
+    prompt = f"""
+    Determine if the following email is spam. Return "Spam" or "Not Spam".
+
+    EMAIL:
+    {data.text}
+    """
+    result = ask_openai(prompt)
+    return {"spam_result": result}
+
+
+@app.post("/assistant/followup")
+def follow_up(data: EmailRequest):
+    prompt = f"""
+    Analyze whether this email requires a follow-up. 
+    Return ONLY valid JSON in this exact structure:
+
+    {{
+        "needs_followup": true/false,
+        "followup_reason": "",
+        "suggested_timeframe": "",
+        "action_items": []
+    }}
+
+    EMAIL:
+    {data.text}
+
+    Make sure the JSON is valid. Do NOT add explanations.
+    """
+    result = ask_openai(prompt, temperature=0.3)
+
+    # Send raw output so Streamlit can parse it
+    return {"analysis": result}

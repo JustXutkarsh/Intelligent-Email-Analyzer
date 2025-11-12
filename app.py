@@ -2,7 +2,8 @@ import streamlit as st
 import requests
 import json
 import re
-FASTAPI_URL = "https://email-analyzer-api.onrender.com"
+FASTAPI_URL = "https://intelligent-email-analyzer.onrender.com"
+
 
   # update if deployed
 
@@ -92,6 +93,7 @@ elif analyze:
 
         except requests.exceptions.ConnectionError:
             st.error("🚫 Could not connect to FastAPI. Is it running?")
+
 
 
 
